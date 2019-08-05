@@ -1,0 +1,445 @@
+<template>
+  <view class="container" >
+
+    <view class="home_content">
+      <van-nav-bar title="我的流水账单" class="nav_bar" fixed/>
+      <view class="bg">
+        <image src="http://m.qpic.cn/psb?/V10whb6D40YGkc/1pfJ5vFz8wX.dfYMdXvKzUUbY74SmBNCOo0hHazw7uM!/b/dL4AAAAAAAAA&bo=OAQeAgAAAAADR0I!&rf=viewer_4" class="bg_img"/>
+      </view>
+
+      <view class="yaoqing">
+        <text class="place" wx:if="{{my_address != ''}}">{{my_address}}</text>
+        <button open-type="share" class="share" plain="true">邀请好友加入></button>
+      </view>
+
+      <view class="msg">
+        <p class="dete" @tap="open_deta">
+          <span>{{year}}年</span>
+          <span>{{month}}月</span>
+        </p>
+        <p class="score">
+          <span>结余</span>
+          <span>{{sum}}</span>
+        </p>
+        <p class="sum">
+          <span>收入: {{correct}}</span>
+          <span>支出: {{against}}</span>
+        </p>
+      </view>
+
+      <view class="line"></view>
+    </view>
+
+    <view class="record" style="height:{{windowHeight+ 'px'}}">
+      <repeat for="{{list}}" key="index" index="index" item="item">
+        <view class="content" @tap="go_detail" data-orderId="{{item}}">
+          <p class="list_top">
+            <span>{{item.month}}月{{item.day}}日</span>
+            <span class="interval">
+              <span>收入：{{item.status == 0 ? 0 : item.money}}</span>
+              <span>支出：{{item.status == 1 ? 0 : item.money}}</span>
+            </span>
+          </p>
+
+          <view class="list_bottom">
+            <view class="list_img">
+              <image src="{{item.imgUrl}}" lazy-load  bindload='onLazyLoad'/>
+            </view>
+
+            <p>{{item.status == 0 ? '-'+item.money : item.money}}</p>
+          </view>
+
+        </view>
+      </repeat>
+      <p class="add_btn" @tap="account"> <span>＋</span> </p>
+    </view>
+
+    <yearMonth></yearMonth>
+
+    <van-toast id="van-toast" />
+
+  </view>
+</template>
+
+<script>
+
+  // 引入SDK核心类
+  var QQMapWX = require('../../util/qqmap-wx-jssdk.js');
+  var qqmapsdk;
+  // 实例化API核心类
+  qqmapsdk = new QQMapWX({
+    key: 'YKEBZ-25JEW-MHDRK-ORW6G-GFF6E-5YBSS'
+  });
+
+  import wepy from 'wepy'
+  import yearMonth from '../../components/year_month'
+  import Toast from '../../components/van/toast/toast'
+  const date = new Date()
+  export default class Index extends wepy.page {
+    config = {
+      navigationStyle: 'custom',
+      navigationBarTextStyle: "white",
+      backgroundColor: '#000',
+      usingComponents: {
+        'van-nav-bar': '../components/van/nav-bar/index',
+        "van-toast": "../../components/van/toast/index"
+      }
+    }
+    components = {
+      yearMonth
+    }
+    data = {
+      windowHeight: wx.getSystemInfoSync()['windowHeight'] - 265,//获取电池那一栏的高度 style="padding-top:{{statusBarHeight}}px"
+      list: [],
+      my_address: '',
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+      sum: 0, //结余
+      against: 0, // 支出
+      correct: 0 //收入
+    }
+    events = {
+      'add_tiem': (year,month,day) => {
+        this.year = year.toString()
+        this.day = day.toString()
+        this.month = month.toString()
+      }
+    }
+    computed = {
+    }
+    onLazyLoad(info) {
+      // console.log(info)
+    }
+    methods = {
+      onShareAppMessage(res) { //分享详情
+        if (res.from === 'button') {
+          // 来自页面内转发按钮
+          console.log(res.target)
+        }
+        return {
+          title: '首页',
+          path: 'pages/homePage/home'
+        }
+      },
+      account() {
+        wx.navigateTo({    //保留当前页面，跳转到应用内的某个页面（最多打开5个页面，之后按钮就没有响应的）
+          url: `/pages/detail`
+        })
+      },
+      open_deta() {
+        this.$invoke('yearMonth','open_mask',{is_show: true});
+      },
+      go_detail(e) {
+        // console.log(e.currentTarget.dataset.orderid._id)
+        wx.navigateTo({
+          url: `/pages/detail?order_id=${e.currentTarget.dataset.orderid._id}`
+        })
+      },
+    }
+    onLoad() {
+      let that = this
+      wx.authorize({ // button 授权选择
+        scope: 'scope.userLocation',
+        success() {
+          wx.getLocation({ //获取定位
+            type: 'gcj02',
+            success(res) {
+              qqmapsdk.reverseGeocoder({
+                location: `${res.latitude},${res.longitude}`,
+                success: function(rs) {//成功后的回调
+                  that.my_address = rs.result.address
+                  that.$apply()
+                }
+              })
+            }
+          })
+        }
+      })
+      wx.showShareMenu({ //分享
+        withShareTicket:true
+      })
+
+      wx.getStorage({
+        key: 'openid',
+        success(res) {
+          wepy.request({
+            url: 'http://localhost:3000/account/find', //开发者服务器接口地址",
+            data: { //请求的参数",
+              openid: res.data,
+              year: that.year,
+              month: that.month
+            }
+          }).then(res=>{
+            that.list = res.data.list
+            // console.log(that.list)
+            that.list.forEach( (item,index) => {
+              if(item.status == 0) {
+                that.sum = that.sum - parseInt(item.money)
+                that.against = that.against + parseInt(item.money)
+
+              } else {
+                that.sum = that.sum + parseInt(item.money)
+                that.correct = that.correct + parseInt(item.money)
+              }
+              that.$apply()
+            })
+          })
+          that.$apply()
+        },
+        fail(err) {
+
+        }
+      })
+    }
+  }
+</script>
+<style lang="less" scoped>
+  page {
+    width: 100%;
+    height: 100%;
+  }
+  .container {
+    width: 100%;
+    height: 100%;
+    background: #f7f7f7;
+    box-sizing: border-box;
+    position: relative;
+
+    .home_content {
+      width: 100%;
+      position: relative;
+      .line {
+        width: 96%;
+        height: 10px;
+        border-radius: 6px;
+        background: #507fbf;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 30px;
+        margin: 0 auto;
+      }
+      .bg {
+        width: 100%;
+        position: relative;
+        .bg_img {
+          width: 100%;
+          display: block;
+        }
+      }
+      .yaoqing {
+        width: 100%;
+        position: fixed;
+        top: 70px;
+        display: flex;
+        color: #fff;
+        .place {
+          flex: 1;
+          display: inline-block;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+          padding: 0 10px;
+          border-radius: 12px;
+          margin: 0 40px;
+          margin-left: 10px;
+          background: rgba(0, 0, 0, 0.1)
+        }
+        .share {
+          text-align: right;
+          margin-right: 15px;
+          font-size: 14px;
+          background: none;
+          outline: none!important;
+          border: none!important;
+          line-height: 2;
+          color: #fff;
+        }
+        button[plain]{ border:0 }
+      }
+      .msg {
+        width: 100%;
+        position: absolute;
+        bottom: 60px;
+        color: #fff;
+        display: flex;
+        .dete {
+          flex: 0.46;
+          display: flex;
+          flex-wrap: wrap;
+          border-right: 1px solid #eee;
+          span {
+            display: inline-block;
+            width: 100%;
+            margin-left: 15px;
+            &:first-child {
+              font-size: 12px;
+            }
+            &:last-child {
+              text-align: center;
+            }
+            &:last-child:after {
+              display: inline-block;
+              content: "";
+              border: 5px solid transparent;
+              border-top-color: #fff;
+              position: relative;
+              top: 2px;
+              left: 2px;
+            }
+          }
+        }
+        .score {
+          flex: 0.6;
+          display: flex;
+          flex-wrap: wrap;
+          span {
+            margin-left: 20px;
+            display: inline-block;
+            width: 100%;
+            &:first-child {
+              font-size: 14px;
+            }
+          }
+        }
+        .sum {
+          flex: 0.9;
+          display: flex;
+          flex-wrap: wrap;
+          margin-left: 30px;
+          span {
+            margin-left: 20px;
+            display: inline-block;
+            font-size: 14px;
+            width: 100%;
+          }
+        }
+      }
+    }
+    .record {
+      width: 93%;
+      margin: 0 auto;
+      background: #fff;
+      z-index: 100;
+      position: absolute;
+      top: 206px;
+      overflow: scroll;
+      .content {
+        width: 100%;
+        background: #fff;
+        border-radius: 3px;
+        position: relative;
+        .list_top {
+          position: relative;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          font-size: 12px;
+          color: #999;
+          &>span:first-child {
+            margin-left: 10px;
+            flex: 1.2;
+            padding: 8px 0;
+          }
+          .interval {
+            flex: 1;
+            padding: 8px 0;
+            text-align: center;
+            margin-right: 10px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            &>span:first-child {
+              flex: 1;
+              text-align: center;
+            }
+            &>span:last-child {
+              flex: 1;
+              text-align: center;
+            }
+          }
+          &::before {
+            width: 100%;
+            content: ' ';
+            display: block;
+            position: absolute;
+            left: 0;
+            bottom: 0px;
+            right: 0;
+            margin: 0 auto;
+            transform: scaleY(0.5);
+            border-bottom: .5px solid #999;
+          }
+        }
+        .list_bottom {
+          display: flex;
+          align-items: center;
+          padding: 10px 0;
+          .list_img {
+            width: 75rpx;
+            height: 75rpx;
+            border-radius: 50%;
+            background: #51C1FF;
+            margin-left: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            image {
+              display: block;
+              width: 40rpx;
+              height: 40rpx;
+            }
+          }
+          p {
+            flex: 1;
+            text-align: right;
+            margin-right: 10px;
+          }
+        }
+      }
+      .add_btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        position: fixed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #51C1FF;
+        right: 0px;
+        left: 0;
+        margin: 0 auto;
+        bottom: 15px;
+        span {
+          display: inline-block;
+          width: 40px;
+          height: 40px;
+          text-align: center;
+          line-height: 35px;
+          color: #fff;
+          font-size: 38px;
+        }
+      }
+    }
+  }
+</style>
+<style lang="less">
+  .nav_bar {
+    background: transparent;
+    position: absolute!important;
+    top: 20px;
+    width: 100%;
+  }
+  .van-nav-bar {
+    padding-top: 20px!important;
+    background: transparent!important;
+  }
+  [class*=van-hairline]::after {
+    border: 0!important;
+  }
+  .van-nav-bar__title,.van-icon {
+    color: #fff;
+  }
+</style>

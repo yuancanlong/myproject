@@ -1,0 +1,363 @@
+<template>
+  <view class="sign">
+    <van-nav-bar title="签到" border='{{false}}' left-arrow fixed bind:click-left="onClickLeft"></van-nav-bar>
+
+    <view class="sign_content">
+      <view class="sign_msg">
+
+        <view class="sign_img">
+          <image src="{{user_msg.avatarUrl}}"/>
+        </view>
+        <view class="sign_center">
+          <text class="user_name">{{user_msg.nickName}}</text>
+
+          <view>
+            <text> 金币明细</text> | <text>领取规则</text>
+          </view>
+        </view>
+
+        <view class="sign_right">
+
+          <view>
+            <van-icon name="http://m.qpic.cn/psb?/V10whb6D40YGkc/2jTtd3YvxhsaEM.84nEbVI6ytlbOaY2OTGsleRZKKho!/b/dD4BAAAAAAAA&bo=FAAUAAAAAAADByI!&rf=viewer_4" /> <span>金币</span>
+          </view>
+
+          <text>{{basis.integral}}</text>
+        </view>
+      </view>
+
+      <view class="sign_detail">
+
+        <view class="detail_top">
+          <view class="detail_icon">
+            <van-icon name="http://m.qpic.cn/psb?/V10whb6D40YGkc/5h4gh7aDDzuI8.B2e.IWusdT9Jq81m1QL63t82toVYM!/b/dL4AAAAAAAAA&bo=MAAwAAAAAAADByI!&rf=viewer_4" size="20px" />
+            <text>签到领金币</text>
+          </view>
+          <view class="detail_text">
+            <text> 连续签到{{basis.continuous | 0}}天</text> | <text>累计签到{{basis.addUp | 0}}天</text>
+          </view>
+        </view>
+
+        <view class="detail_bottom">
+          <view class="detail">
+            <view class="detail_day" wx:for="{{week_arr}}" wx:key="{{index}}">
+              <van-icon name="checked" color="#51C1FF" size="45px" wx:if="{{(index+1)<= show_num}}"></van-icon>
+              <view class="day" wx:else>
+                <view >
+                  <text class="num">{{index+1}}</text>
+                  <text class="gold">金币</text>
+                </view>
+              </view>
+              <text class="datail_deta">{{item}}</text>
+            </view>
+          </view>
+
+          <view class="detail_btn" @tap="go_sign">
+            <text >签到</text>
+          </view>
+
+        </view>
+      </view>
+    </view>
+
+     <van-toast id="van-toast" />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import Toast from '../components/van/toast/toast'
+  export default class sign extends wepy.page {
+    config = {
+      navigationStyle: 'custom',
+      navigationBarTextStyle: "black",
+      usingComponents: {
+        'van-icon': '../../components/van/icon/index',
+        'van-nav-bar': '../components/van/nav-bar/index',
+        "van-toast": "../components/van/toast/index"
+      }
+    }
+    components = {
+
+    }
+
+    data = {
+      user_msg: {},
+      basis: [],
+      week_arr: [],
+      openid: '',
+      show_num: 0
+    }
+
+    events = {
+
+    }
+
+    computed = {
+
+    }
+
+    methods = {
+      go_sign() {
+        wepy.request({
+          url: 'http://localhost:3000/sign/info', //开发者服务器接口地址",
+          data: {
+            openid: this.openid,
+            increase: this.basis != '' ? parseInt(this.basis.signDay)+1 : 1,
+            access: 0
+          }, //请求的参数",
+        }).then( res => {
+          console.log(res)
+          this.show_num = parseInt(res.data.data.signDay) | 1
+          this.basis = res.data.data
+          this.$apply()
+          Toast(res.data.msg)
+        })
+      },
+      onClickLeft() {
+        wx.switchTab({
+          url: '/pages/about/about',   //注意switchTab只能跳转到带有tab的页面，不能跳转到不带tab的页面
+        })
+      }
+    }
+    onLoad() {
+
+      let that = this
+      wx.getStorage({
+        key: "userInfo",
+        success(res) {
+          that.user_msg = JSON.parse(res.data.userInfo.rawData)
+          console.log(that.user_msg)
+        },
+        fail(err) {
+          console.log(err)
+        }
+      })
+      let date = new Date().getTime()
+      for(let i=0;i<7;i++) {
+        date = date + 86400000
+        that.week_arr.push(`${new Date(date).getMonth()+1}/${new Date(date).getDate()}`)
+      }
+
+      wx.getStorage({ //详情
+        key: 'openid',
+        success(res) {
+          that.openid = res.data
+          wepy.request({
+            url: 'http://localhost:3000/sign/money', //开发者服务器接口地址",
+            data: {//请求的参数",
+              openid: res.data,
+            }
+          }).then(rs=>{
+            that.basis = rs.data.msg
+            console.log(that.basis)
+            that.show_num = parseInt(rs.data.msg.signDay)
+            let nowDate = parseInt(that.basis.addTime)
+            if (nowDate) {
+              that.week_arr = []
+              for(let i=0;i<7;i++) {
+                if(i == 0) {
+                  nowDate = nowDate-86400000
+                }
+                nowDate = nowDate + 86400000
+                that.week_arr.push(`${new Date(nowDate).getMonth()+1}/${new Date(nowDate).getDate()}`)
+              }
+            }
+          })
+        }
+      })
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+  .sign {
+    width: 100%;
+    height: 100%;
+  }
+  .sign_content {
+    margin-top: 74px;
+    height: 100%;
+    box-sizing: content-box;
+    padding: 0 10px;
+    .sign_msg {
+      display: flex;
+      align-items: center;
+      padding: 10px 10px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      background: #51C1FF;
+      .sign_img {
+        image {
+          width: 70px;
+          height: 70px;
+          display: block;
+          border-radius: 50%;
+          border: 2px solid #fff;
+          box-shadow: 2rpx 2rpx 50rpx #fff;
+        }
+      }
+      .sign_center {
+        flex: 1;
+        display: flex;
+        flex-wrap: wrap;
+        margin-left: 10px;
+        .user_name {
+          font-size: 16px;
+          font-weight: bold;
+        }
+        view {
+          width: 100%;
+          margin-top: 4px;
+          text {
+            display: inline-block;
+            font-size: 12px;
+          }
+        }
+      }
+      .sign_right {
+        position: relative;
+        top: -10px;
+        view {
+          width: 100%;
+          display: flex;
+          align-items: center;
+        }
+        text {
+          margin-top: 4px;
+          display: block;
+          text-align: right;
+          font-size: 25px;
+        }
+      }
+    }
+    .sign_detail {
+      color: #000;
+      margin-top: 10px;
+      border-radius: 10px;
+      background-image: linear-gradient(180deg, #fff 30% ,#51C1FF);
+      background-size: 120% 100%;
+      background-repeat: no-repeat;
+      background-position: center center;
+      .detail_top {
+        padding: 5px 10px;
+        .detail_icon {
+          vertical-align: center;
+          display: flex;
+          align-items: center;
+          color: #51C1FF;
+          .van-icon__image {
+            position: absolute;
+            top: 6px;
+          }
+          text {
+            margin-left: 5px;
+            font-weight: bold;
+            display: inline-block;
+          }
+        }
+        .detail_text {
+          font-size: 12px;
+          letter-spacing: 1px;
+          margin: 5px 0;
+        }
+      }
+      .detail_bottom {
+        width: 100%;
+        height: 100%;
+        .detail {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          margin-top: 8px;
+          .detail_day {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            .day {
+              border: 1px solid #FDB62F;
+              background: #FDB62F;
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              position: relative;
+              &>view {
+                width: 100%;
+                position: absolute;
+                top: 45%;
+                left: 50%;
+                transform: translate(-50%,-50%);
+              }
+              text {
+                color: #fff;
+                display: block;
+                width: 100%;
+                font-size: 12px;
+                height: 12px;
+                line-height: 12px;
+                text-align: center;
+              }
+              text:first-child {
+                font-size: 14px;
+              }
+              text:last-child {
+                margin-top: 3px;
+              }
+            }
+            .datail_deta {
+              font-size: 13px;
+              color: #fff;
+              margin-top: 8px;
+            }
+          }
+        }
+        .detail_btn {
+          width: 100%;
+          margin: 30px 0 20px 0;
+          display: flex;
+          justify-content: center;
+          text {
+            display: inline-block;
+            padding: 5px 55px;
+            border-radius: 20px;
+            background: #FDB62F;
+            color: #fff;
+          }
+        }
+      }
+    }
+  }
+</style>
+
+<style lang="less">
+  page {
+    height: 100%;
+    width: 100%;
+
+  }
+  .sign {
+    .van-nav-bar__arrow,.van-icon-arrow-left {
+      color: #000!important;
+    }
+    .van-icon__image {
+      position: absolute;
+      top: 6px;
+    }
+  }
+  .day {
+    position: relative;
+    .van-icon {
+      position:absolute;
+      left: 0;
+      top: 0;
+      width:100%;
+      height:40px;
+      display: block;
+      text-align:center;
+      line-height:40px;
+    }
+  }
+
+</style>

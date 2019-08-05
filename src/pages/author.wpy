@@ -1,0 +1,148 @@
+<template>
+  <view class="author">
+
+    <view class="icon">
+      <!-- <image src="http://m.qpic.cn/psb?/V10whb6D40YGkc/iXkr6H*WwGkJ0q3pEO9yDnAbqIhFcgOST8YP4X1A7Lg!/b/dL8AAAAAAAAA&bo=lQCaAAAAAAADFz0!&rf=viewer_4" /> -->
+      <text>记账账单,让收支明细一目了然</text>
+    </view>
+
+    <view class="btn" wx:if="{{is_show}}">
+      <button open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="onGotUserInfo" >
+        授权微信登录
+      </button>
+    </view>
+
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  export default class author extends wepy.page {
+    config = {
+      navigationStyle: 'custom',
+      navigationBarTextStyle: "white",
+      backgroundColor: '#000',
+    }
+    components = {
+
+    }
+
+    data = {
+      is_show: false
+    }
+    computed = {
+    }
+
+    methods = {
+      onGotUserInfo() {
+        wx.login({
+          success (res) {
+            wx.request({ //获取openid
+              url: 'https://api.weixin.qq.com/sns/jscode2session',
+              data: {
+                //小程序唯一标识
+                appid: 'wxa7343cd2039327fc',
+                //小程序的 app secret
+                secret: '58128e08672813f59ec38047ec875a70',
+                grant_type: 'authorization_code',
+                js_code: res.code
+              },
+              success(rs) {
+                wx.setStorage({
+                  key: 'openid',
+                  data: rs.data.openid,
+                })
+              }
+            })
+            wx.getUserInfo({ //获取授权信息
+              success(res) {
+                wx.setStorage({
+                  key: 'userInfo',
+                  data: {
+                    userInfo : res,
+                  },
+                  success: function () {
+                    wx.switchTab({
+                      url: '/pages/homePage/home',   //注意switchTab只能跳转到带有tab的页面，不能跳转到不带tab的页面
+                    })
+                  }
+                })
+              }
+            })
+          }
+        })
+      },
+    }
+    onLoad() {
+      let that = this
+      wx.getSetting({ //判断是否授权了信息
+        success(res) {
+          if(res.authSetting['scope.userInfo'] == true) {
+            wx.switchTab({
+              url: '/pages/homePage/home',   //注意switchTab只能跳转到带有tab的页面，不能跳转到不带tab的页面
+            })
+          } else {
+            that.is_show = true
+            that.$apply()
+          }
+        }
+      })
+
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+  page {
+    width: 100%;
+    height: 100vh;
+  }
+  .author {
+    width: 100%;
+    height: 100vh;
+    background-image: url('http://m.qpic.cn/psb?/V10whb6D40YGkc/BahWq5Faw55GXS6yPr2dzxP6WN.hLE.IOSTzopow47U!/b/dL8AAAAAAAAA&bo=OASABwAAAAADF4k!&rf=viewer_4');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    .icon {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: absolute;
+      left: 50%;
+      top: 35%;
+      transform: translate(-50%,-50%);
+      image {
+        width: 75px;
+        height: 75px;
+        z-index: 10;
+      }
+      text {
+        width: 100%;
+        text-align: center;
+        color: #fff;
+        font-size: 16px;
+        letter-spacing: 10px;
+        margin-top: 20%;
+      }
+    }
+    .btn {
+      width: 45%;
+      position: absolute;
+      top: 70%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      button {
+        color: #51C1FF;
+        font-size: 16px;
+        letter-spacing: 1px;
+        padding: 6px 0;
+        border-radius: 50px;
+      }
+    }
+  }
+</style>
+<style lang="less">
+
+</style>

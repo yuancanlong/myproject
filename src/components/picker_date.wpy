@@ -1,0 +1,169 @@
+<template>
+  <view class="picker_date">
+    <view class='mask' @tap="mask_close" wx:if="{{is_mask}}"></view>
+    <view class="picker_btn" wx:if="{{is_mask}}">
+      <text @tap="cancel">取消</text>
+      <text @tap="confirm">确定</text>
+    </view>
+    <picker-view indicator-style="height: 50px;" style="width: 100%; height: 250px;" value="{{value}}" bindchange="bindChange" class="picker" wx:if="{{is_mask}}">
+      <picker-view-column>
+        <view wx:for="{{years}}" style="line-height: 50px" wx:key="{{index}}">{{item}}年</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{months}}" style="line-height: 50px" wx:key="{{index}}">{{item}}月</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{days}}" style="line-height: 50px" wx:key="{{index}}">{{item}}日</view>
+      </picker-view-column>
+    </picker-view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy';
+
+  const date = new Date()
+  const years = []
+  const months = []
+  const days = []
+
+  const nowYear = date.getFullYear()
+  const nowMonth = date.getMonth() + 1
+  const nowDay = date.getDate()
+
+  for (let i = 1990; i <= date.getFullYear(); i++) {
+    years.push(i)
+  }
+
+  for (let i = 1 ; i <= 12; i++) {
+    months.push(i)
+  }
+
+  for (let i = 1 ; i <= 31; i++) {
+    days.push(i)
+  }
+  export default class pickerDate extends wepy.component {
+
+    data = {
+      //记录
+      year: date.getFullYear(),
+      month: nowMonth,
+      day: nowDay,
+      //渲染的
+      years: years,
+      months: months,
+      days: days,
+      value: [9999, date.getMonth(), date.getDate()-1],
+      is_mask: false,
+    }
+    components = {
+
+    }
+    methods = {
+      bindChange(e) {
+        let daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        const val = e.detail.value
+        this.year = this.data.years[val[0]],
+        this.month = this.data.months[val[1]],
+        this.day = this.data.days[val[2]]
+        let a = []
+        if (this.month === 2) {
+          if ( ((this.year % 4 === 0) && ((this.year % 100) !== 0)) || (this.year % 400 === 0) ) {
+            for (let i = 1 ; i <= 29; i++) {
+              a.push(i)
+            }
+          } else {
+            for (let i = 1 ; i <= 28; i++) {
+              a.push(i)
+            }
+          }
+          this.days = a
+        } else {
+            for (let i = 1 ; i <= daysInMonth[ this.data.months[val[1]]-1 ]; i++) {
+              a.push(i)
+            }
+          this.days = a
+        }
+        this.$apply()
+      },
+      cancel() {
+        this.is_mask = false
+      },
+      confirm() {
+        console.log(this.year,this.month,this.day)
+        this.$emit('add_tiem', this.year,this.month,this.day);
+        this.is_mask = false
+        this.year = date.getFullYear()
+        this.month = date.getMonth() + 1
+        this.day = date.getDate()
+      },
+      mask_close() {
+        this.is_mask = false
+      },
+      open_mask(params) {
+        this.is_mask = params.is_show
+      }
+    }
+    onLoad(){
+
+    }
+  }
+</script>
+<style lang="less" scoped>
+  .picker_date {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    background: #fff;
+    opacity: 1;
+    z-index: 1000;
+    color: #000;
+    .picker_btn {
+      width: 100%;
+      display: flex;
+      height: 40px;
+      position: absolute;
+      bottom: 28px;
+      background: #fff;
+      z-index: 500;
+      text {
+        flex: 1;
+        display: block;
+        line-height: 40px;
+        text-align: left;
+        margin: 0 15px;
+      }
+      text:last-child {
+        text-align: right;
+        color: #33C481;
+      }
+    }
+  }
+  .picker {
+    background: #fff;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    opacity: 1;
+    z-index: 1000;
+  }
+  .mask{
+    width:100%;
+    height:100%;
+    position:fixed;
+    background-color:#000;
+    z-index:9999;
+    top:0;
+    left:0;
+    opacity:0.5;
+    color: #000;
+    animation: mask_an 0.3s ease-in-out;
+  }
+  @keyframes mask_an {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+</style>

@@ -1,0 +1,99 @@
+<style lang="less">
+  @import "./styles/base";
+  @import "./styles/weui.wxss";
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/author',
+      'pages/integral',
+      'pages/about/about',
+      'pages/sign',
+      'pages/homePage/home',
+      'pages/detail',
+      'pages/questionnaire',
+      'pages/about/year',
+      "pages/charts",
+      // 'pages/aboutus',
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#fff',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: 'black'
+    },
+    "tabBar": {
+      "color": "#999999",
+      "selectedColor": "#ff6a3c",
+      "backgroundColor": "#ffffff",
+      "borderStyle": "black",
+      "list": [{
+        "pagePath": "pages/homePage/home",
+        "text": "首页",
+        "iconPath": "images/icon_home.png",
+        "selectedIconPath": "images/icon_home_active.png"
+      }, {
+        "pagePath": "pages/charts",
+        "text": "图表",
+        "iconPath": "images/icon_classify.png",
+        "selectedIconPath": "images/icon_classify_active.png"
+      },
+      {
+        "pagePath": "pages/about/about",
+        "text": "我",
+        "iconPath": "images/icon_info.png",
+        "selectedIconPath": "images/icon_info_active.png"
+      },
+      ]
+    },
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置信息将用于小程序位置接口的效果展示"
+      }
+    }
+  }
+
+  getUserInfo() {
+    // wx.getUserInfo({
+    //   success(res) {
+    //     console.log(res)// 性别 0：未知、1：男、2：女
+    //   }
+    // })
+  }
+
+  globalData = {
+    userInfo: null
+  }
+
+  constructor () {
+    super()
+    this.use('requestfix')
+    this.use('promisify');
+  }
+
+  onLaunch() {
+
+    wx.login({
+      success:function(res) {
+        console.log(res)
+              // this.getUserInfo()
+      }
+
+    })
+  }
+
+}
+</script>

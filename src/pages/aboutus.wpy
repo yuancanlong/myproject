@@ -1,0 +1,237 @@
+<template>
+  <view class="container aboutus">
+    <view class="scroll-fullpage" @touchstart="scrollTouchstart" @touchmove="scrollTouchmove" @touchend="scrollTouchend" style="transform:translateY(-{{scrollindex*100}}%);margin-top: {{margintop}}px">
+      <view class="section section01 {{scrollindex == 0? 'active' : ''}}">
+        <view class="intro">
+          <text class="section-maintitle">我们是流年旅游攻略</text>
+          <text class="section-subtitle">为你提供分享每一段精彩旅程的平台，记录你的美好生活</text>
+          <text class="section-subtitle">春夏秋冬，来开启属于你的足迹吧！</text>
+        </view>
+        <!-- <image class="arrow arrow-down" src="../../images/my/down.png"></image> -->
+      </view>
+      <view class="section section02 {{scrollindex==1? 'active' : ''}}">
+        <view class="intro">
+          <text class="section-maintitle">春</text>
+          <text class="section-subtitle">民谚曰：“春游景色好，莫忘游中恼，出门多三思，注意防备早。”</text>
+          <text class="section-subtitle">春天是万物复苏，百花盛开的好日子，草儿绿了，枝条发芽了，遍地的野花、油菜花开的灿烂多姿</text>
+          <text class="section-subtitle">一切沐浴着春晨的曙光，在春风中摇弋、轻摆，仿佛少女的轻歌曼舞，楚楚动人</text>
+        </view>
+        <!-- <image class="arrow arrow-down" src="../../images/my/down.png"></image> -->
+      </view>
+      <view class="section section03 {{scrollindex==2? 'active' : ''}}">
+        <view class="intro">
+          <text class="section-maintitle">夏</text>
+          <text class="section-subtitle">牡丹披红衣，百合穿黄衫，牵牛着紫袍……</text>
+          <text class="section-subtitle">消失得无影无腙太阳把地面烤得滚烫滚烫</text>
+          <text class="section-subtitle">七色奔放的彩裙赏心悦目</text>
+        </view>
+        <!-- <image class="arrow arrow-down" src="../../images/my/down.png"></image> -->
+      </view>
+      <view class="section section04 {{scrollindex==3? 'active' : ''}}">
+        <view class="intro">
+          <text class="section-maintitle">秋</text>
+          <text class="section-subtitle">一道残阳铺水中，半江瑟瑟半江红。可怜九月初三夜，露似珍珠月似弓</text>
+          <text class="section-subtitle">秋天的美是成熟的它不像春那么羞涩，夏那么坦露，冬那么内向</text>
+          <text class="section-subtitle">稻田里，一片黄澄澄的稻谷随着秋风翻起金波，绿油油的菜地里，肥嫩的菜叶上闪耀着晶莹的露珠</text>
+        </view>
+        <!-- <image class="arrow arrow-down" src="../../images/my/down.png"></image> -->
+      </view>
+      <view class="section section05 {{scrollindex==4? 'active' : ''}}">
+        <view class="intro">
+          <text class="section-maintitle">冬</text>
+          <text class="section-subtitle">冬，纯洁美丽。它化做雪花，用自己洁白的生躯覆盖在大地上</text>
+          <text class="section-subtitle">一切都是银装素裹，一副冰清玉洁的模样</text>
+          <text class="section-subtitle">雪花纷纷扬扬的飘落下来，像仙女和蝴蝶仙子们的合奏一样</text>
+        </view>
+        <!-- <image class="arrow arrow-down" src="../../images/my/up.png"></image> -->
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class Aboutus extends wepy.page {
+    config = {
+      navigationBarTitleText: '关于我们',
+      navigationStyle: 'custom',
+      usingComponents: {
+        'van-icon': '../../components/vant/icon/index',
+      }
+    }
+    components = {
+
+    }
+
+    data = {
+      scrollindex: 0,  //当前页面的索引值
+      totalnum: 5,  //总共页面数
+      starty: 0,  //开始的位置x
+      endy: 0, //结束的位置y
+      critical: 100, //触发翻页的临界值
+      margintop: 0,  //滑动下拉距离
+    }
+
+    events = {
+
+    }
+
+    computed = {
+
+    }
+
+    methods = {
+      scrollTouchstart(e){
+        let py = e.touches[0].pageY
+        this.starty = py
+        this.$apply()
+      },
+      scrollTouchmove(e){
+        let py = e.touches[0].pageY;
+        this.endy = py
+        if (py - this.starty < 100 && py - this.starty > -100) {
+          this.margintop = py - this.starty
+        }
+        this.$apply()
+      },
+      scrollTouchend(e){
+        if (this.endy - this.starty > 100 && this.scrollindex > 0) {
+          this.scrollindex = this.scrollindex - 1
+        } else if (this.endy - this.starty < -100 && this.scrollindex < this.totalnum - 1) {
+          this.scrollindex = this.scrollindex + 1
+        }
+        this.starty = 0
+        this.endy = 0
+        this.margintop = 0
+        this.$apply()
+      },
+    }
+
+    onLoad() {
+
+    }
+  }
+</script>
+
+<style lang="less">
+  page {
+    height: 100%;
+    background:#fff;
+    display:flex;
+    flex-direction: column;
+    cursor: default;
+    -webkit-user-select: none;
+    user-select: none;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .aboutus {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    box-sizing:border-box;
+    height: 100%;
+    overflow: hidden;
+    .scroll-fullpage {
+      height: 100%;
+      transition: all 0.3s;
+      .section {
+        height: 100%;
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+        position: relative;
+        .intro {
+          width: 100%;
+          padding:0 28rpx;
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          text {
+            display: block;
+            text-align: center;
+            color: #fff;
+            margin-bottom: 28rpx;
+            letter-spacing: 10rpx;
+          }
+          .section-maintitle {
+            font-size: 50rpx;
+            font-weight: bold;
+            letter-spacing: 10rpx;
+          }
+          .section-subtitle {
+            font-size: 35rpx;
+            line-height: 46rpx;
+          }
+        }
+        .arrow {
+          width: 80rpx;
+          height: 80rpx;
+          display: block;
+          position: absolute;
+          left: 50%;
+          bottom: 145rpx;
+          margin-left: -40rpx;
+        }
+        .arrow-down {
+          animation: downMove 1.5s ease-in-out infinite;
+        }
+        .arrow-up {
+          animation: upMove 1.5s ease-in-out infinite;
+        }
+        @keyframes upMove {
+          from {
+            transform: translate(0, 0) scale(1);
+            opacity: 1;
+          }
+          to {
+            transform: translate(0, -80rpx) scale(0.8);
+            opacity: 0;
+          }
+        }
+        @keyframes downMove {
+          from {
+            transform: translate(0, 0) scale(1);
+            opacity: 1;
+          }
+          to {
+            transform: translate(0, 80rpx) scale(0.8);
+            opacity: 0;
+          }
+        }
+      }
+      .active {
+        .section-maintitle,.section-subtitle {
+          animation: mymove 0.8s;
+        }
+        @keyframes mymove {
+          from {
+            transform: translateY(-400rpx) scale(0.5) rotateY(90deg);
+          }
+          to {
+            transform: translateY(0) scale(1) rotateY(0);
+          }
+        }
+      }
+      .section01 {
+        background-image: url('http://kan.027cgb.com/621326/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20190507190914.png');
+      }
+      .section02 {
+        background-image: url('http://kan.027cgb.com/621326/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_201905071906241.png');
+      }
+      .section03 {
+        background-image: url('http://kan.027cgb.com/621326/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20190507190623.png');
+      }
+      .section04 {
+        background-image: url('http://kan.027cgb.com/621326/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20190507190624.png');
+
+      }
+      .section05 {
+        background-image: url('http://kan.027cgb.com/621326/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_201905071909141.png');
+      }
+
+    }
+  }
+</style>

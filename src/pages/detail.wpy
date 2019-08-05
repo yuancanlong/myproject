@@ -1,0 +1,486 @@
+<template>
+  <view class="container">
+    <view class="head_position">
+      <van-nav-bar title="记一笔" left-arrow fixed @click-left="onClickLeft"/>
+      <view class="switch">
+        <p>
+          <span class="{{ show_switch ? 'pitch' : '' }}" @tap="switch_true">支出</span>
+          <span class="{{ show_switch == false ? 'pitch' : ''}} " @tap="switch_false">收入</span>
+        </p>
+      </view>
+    </view>
+
+      <view class="iconList">
+        <p class="one_list">
+          <view class="one_img">
+            <image src="{{show_switch ? list[chek_index].img : list_two[chek_index].img}}"/>
+          </view>
+
+          <span>{{show_switch ? list[chek_index].title : list_two[chek_index].title}}</span>
+        </p>
+        <span>{{keyVal}}</span>
+      </view>
+
+      <view class="iocn_chek" style="height:{{ show_switch ? windowHeight/6*0.4: windowHeight/6*0.2 }}vh">
+        <repeat for="{{show_switch ? list : list_two}}" item="item" key="index" index="index">
+           <view style="width:{{windowWidth-16 + 'px'}}" @tap="chek" data-index="{{index}}" class="icon_scroll">
+            <view class="{{chek_index == index ? 'chek' : 'icon_img'}}">
+              <image src="{{item.img}}" />
+            </view>
+            <p class="{{chek_index == index ? 'chek_p' : ''}}">{{item.title}}</p>
+          </view>
+        </repeat>
+      </view>
+
+      <view class="footer">
+        <view class="remark"> <span>备注:</span> <input type="text" placeholder="请输入备注" bindblur="my_focus" focus="{{true}}"> </view>
+        <view class="keyworder">
+          <view class="key_left">
+            <repeat for="{{ num_list }}" item="item" key="index" index="index">
+              <text @tap="key_tap" data-key="{{item}}">{{item}}</text>
+            </repeat>
+          </view>
+          <view class="key_right">
+            <text @tap="picker_date">{{month}}月{{day}}日</text>
+            <view class="key_img" @tap="delete_key">
+              <image src="../images/delete.png"/>
+            </view>
+            <text class="queding" @tap="add_confirm">确定</text>
+          </view>
+        </view>
+      </view>
+
+      <pickerDate ></pickerDate>
+      <van-toast id="van-toast" />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import {pint_zhi,pint_shou} from '../util/index'
+  import pickerDate from '../components/picker_date'
+  import Toast from '../components/van/toast/toast'
+
+  export default class detail extends wepy.page {
+    config = {
+      navigationStyle: 'custom',
+      navigationBarTextStyle: "white",
+      backgroundColor: '#000',
+      usingComponents: {
+        'van-nav-bar': '../components/van/nav-bar/index',
+        "van-toast": "../components/van/toast/index"
+      }
+    }
+    components = {
+      pickerDate: pickerDate
+    }
+    data = {
+      show_switch: true,
+      list: [],
+      list_two: [],
+      windowWidth: wx.getSystemInfoSync()['windowWidth']/5,
+      windowHeight: wx.getSystemInfoSync()['windowHeight'],
+      num_list: [],
+      chek_index: 0,
+      key_list: [],
+      keyVal: '0.00',
+      my_input: '',
+      year: '',
+      day: '',
+      month: '',
+      order: '',
+      openid: ''
+    }
+    events = {
+      'add_tiem': (year,month,day) => {
+        this.year = year.toString()
+        this.day = day.toString()
+        this.month = month.toString()
+      }
+    }
+    computed = {
+    }
+    watch = {
+      key_list(newVal,oldVal) {
+        this.keyVal = newVal.toString().replace(new RegExp(/,/g),'')
+      },
+    }
+
+    methods = {
+      onClickLeft() {
+
+      },
+      switch_true() {
+        this.show_switch = true
+        this.chek_index = 0
+        this.$apply()
+      },
+      switch_false() {
+        this.show_switch = false
+        this.chek_index = 0
+        this.$apply()
+      },
+      chek(e) {
+        this.chek_index = e.currentTarget.dataset.index
+        this.$apply()
+      },
+      key_tap(e) {
+        if (e.currentTarget.dataset.key == '清空') {
+          this.key_list = []
+          this.keyVal = '0.00'
+        } else {
+          this.key_list.push(e.currentTarget.dataset.key)
+        }
+        this.$apply()
+      },
+      delete_key() {
+        let S = this.keyVal;
+        //如果没有输入，直接返回
+        if (!S.length) return false;
+        //否则删除最后一个
+        this.keyVal = S.substring(0, S.length - 1)
+        this.$apply()
+      },
+      picker_date() {
+
+        this.$invoke('pickerDate','open_mask',{is_show: true});
+      },
+      add_confirm() {
+        let imgUrl = this.show_switch ? this.list[this.chek_index].img : this.list_two[this.chek_index].img
+        let title = this.show_switch ? this.list[this.chek_index].title : this.list_two[this.chek_index].title
+        let that = this
+        if (parseInt(this.keyVal) == 0) {
+          Toast('请输入金额')
+        } else {
+
+          if (this.order != undefined) {
+            wepy.request({
+              url: 'http://localhost:3000/account/update',
+              data: {
+                money: this.keyVal,
+                imgUrl: imgUrl,
+                title: title,
+                year: that.year,
+                month: that.month,
+                day: that.day,
+                remark: this.my_input,
+                status: this.show_switch ? '0' : '1',
+                openid: this.openid,
+                orderId: this.order
+              }
+            }).then(res => {
+              // if(res.data.code == 200) {
+                // Toast('添加成功')
+                console.log(res)
+              // }
+            });
+          } else {
+            wepy.request({
+              url: 'http://localhost:3000/account',
+              data: {
+                money: this.keyVal,
+                imgUrl: imgUrl,
+                title: title,
+                year: that.year,
+                month: that.month,
+                day: that.day,
+                remark: this.my_input,
+                status: this.show_switch ? '0' : '1',
+                openid: this.openid
+              }
+            }).then(res => {
+              if(res.data.code == 200) {
+                Toast('添加成功')
+              }
+            });
+          }
+        }
+      },
+      my_focus(e, cursor, keyCode) {
+        this.my_input = e.detail.value
+      }
+    }
+    onLoad(options) {
+      let that = this
+      that.order = options.order_id
+      wx.getStorage({
+        key: 'openid',
+        success(res) {
+          that.openid = res.data
+          if(that.order != undefined) {
+            wepy.request({
+              url: 'http://localhost:3000/account/detail',
+              data: {
+                orderId : that.order,
+                openid: res.data
+              }
+            }).then(res => {
+              if(res.data.code == 200) {
+                let arr = []
+                arr.push(res.data.list[0].status == 0  ? pint_zhi('') : pint_shou(''))
+                res.data.list[0].status == 0 ? that.show_switch = true : that.show_switch = false
+                arr[0].forEach( (item,index)=>{
+                  if(item.title == res.data.list[0].title) {
+                    that.chek_index = index
+                    that.keyVal = res.data.list[0].money
+                  }
+                })
+              }
+            });
+          }
+        }
+      })
+      this.list = pint_zhi('')
+      this.list_two = pint_shou('')
+      this.num_list = [
+        1,2,3,4,5,6,7,8,9,'清空',0,'.'
+      ]
+      let time = new Date()
+      this.year = time.getFullYear()
+      this.month = time.getMonth() + 1
+      this.day = time.getDate()
+      this.$apply()
+    }
+  }
+</script>
+<style lang="less" scoped>
+
+  .container {
+    width: 100%;
+    .head_position {
+      width: 100%;
+      background: #51C1FF;
+      .van-nav-bar {
+        background: transparent;
+      }
+      [class*=van-hairline]::after {
+        border: 0;
+      }
+      .van-nav-bar__title,.van-icon {
+        color: #fff;
+      }
+      .switch {
+        margin-top: 60px;
+        width: 100%;
+        margin-bottom: 15px;
+        p {
+          border-radius: 48px;
+          width: 34%;
+          margin: 0 auto;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: rgba(100,100,100,0.2);
+          span {
+            border-radius: 48px;
+            flex: 1;
+            text-align: center;
+            color: #fff;
+            display: inline-block;
+            padding: 3px 0;
+            font-size: 14px;
+          }
+        }
+        .pitch {
+          color: #51C1FF;
+          background: #fff;
+        }
+      }
+    }
+    .iconList {
+      width: 100%;
+      padding: 5px 0;
+      display: flex;
+      align-items: center;
+      .one_list {
+        width: 100%;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        margin-left: 10px;
+        .one_img {
+          margin-right: 10px;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #4FC1FF;
+          image {
+            width: 20px;
+            height: 20px;
+            display: block;
+          }
+        }
+        &>span {
+          display: inline-block;
+          font-size: 16px;
+        }
+      }
+      &> span {
+        margin-right: 10px;
+        color: #51C1FF;
+      }
+    }
+    .iocn_chek {
+      background: #F7F9FC;
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      // height: 45vh;
+      overflow: scroll;
+      flex-wrap: wrap;
+      .icon_scroll {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 10px 8px;
+        justify-content: center;
+        .icon_img {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #E9EEF1;
+          border-radius: 50%;
+          image {
+            display: block;
+            margin: 0 auto;
+            width: 20px;
+            height: 20px;
+          }
+        }
+        p {
+          margin-top: 4px;
+          width: 100%;
+          font-size: 14px;
+          color: #ADAEB3;
+          text-align: center;
+        }
+        .chek {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #4FC1FF;
+          border-radius: 50%;
+          color: #000;
+          image {
+            display: block;
+            margin: 0 auto;
+            width: 20px;
+            height: 20px;
+          }
+        }
+        .chek_p {
+          margin-top: 4px;
+          width: 100%;
+          font-size: 14px;
+          color: #000;
+          text-align: center;
+        }
+      }
+    }
+    .footer {
+      width: 100%;
+      position: fixed;
+      bottom: 0;
+      background: #fff;
+      .remark {
+        display: flex;
+        span {
+          margin: 0 10px;
+
+        }
+        input {
+          flex: 1;
+        }
+      }
+      .keyworder {
+        width: 100%;
+        display: flex;
+        .key_left {
+          width: 75%;
+          text {
+            background: #fff;
+            display: inline-block;
+            width: 33.3%;
+            text-align: center;
+            padding: 10px 0;
+            border: 1px solid #F1F1F3;
+            border-right: none;
+            box-sizing: border-box;
+          }
+          text:nth-child(-n+9) {
+            border-bottom: none;
+          }
+          text:nth-child(3n) {
+            border-right: 1px solid #F1F1F3;
+          }
+          text:nth-child(3n-2) {
+            border-left: none;
+          }
+        }
+        .key_right {
+          width: 25%;
+          display: flex;
+          flex-wrap: wrap;
+          flex-direction: column;
+          .key_img {
+            flex: 1;
+            border: 1px solid #F1F1F3;
+            border-left: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fff;
+            image {
+              width: 30px;
+              height: 30px;
+            }
+          }
+          text {
+            flex: 1;
+            border-right: 1px solid #F1F1F3;
+            border-top: 1px solid #F1F1F3;
+            text-align: center;
+            line-height: 40.25px;
+            background: #fff;
+          }
+          .queding {
+            flex: 2;
+            border-top: 1px solid #51C1FF;
+            border-bottom: 1px solid #51C1FF;
+            line-height: 90.5px;
+            background: #51C1FF;
+            color: #fff;
+          }
+        }
+      }
+    }
+  }
+</style>
+<style lang="less">
+  page {
+    width: 100%;
+    // height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+    .head_position {
+      width: 100%;
+      background: #51C1FF;
+      .van-nav-bar {
+        background: transparent;
+      }
+      [class*=van-hairline]::after {
+        border: 0;
+      }
+      .van-nav-bar__title,.van-icon {
+        color: #fff;
+      }
+    }
+
+</style>

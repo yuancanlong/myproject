@@ -1,0 +1,349 @@
+<template>
+  <view class="question">
+    <van-nav-bar title="填写表格" border='{{false}}' fixed bind:click-left="onClickLeft">
+      <view slot="left" class="bar_left">
+        <image src="http://m.qpic.cn/psb?/V10whb6D40YGkc/7DzzbjocOkrXQ0Va8JW.qw4jCcwPA*VP3lzG.DUVt80!/b/dFQBAAAAAAAA&bo=FAAUAAAAAAADFzI!&rf=viewer_4"/>
+      </view>
+    </van-nav-bar>
+
+    <view class="question_content">
+      <view class="question_title">
+        <text>问卷调查</text>
+        <text>你觉得“记账账单”怎么样, 欢迎您的意见反馈</text>
+      </view>
+
+      <view class="question_one">
+        <span class="question_text">一.您是如何进入到小程序的? (单选) <text>*</text></span>
+        <van-radio-group value="{{ enter }}" bind:change="enter" style="height: 100%">
+          <van-radio name="1" class="radio">搜索</van-radio>
+          <van-radio name="2" class="radio">朋友分享</van-radio>
+          <van-radio name="3" class="radio">其他</van-radio>
+        </van-radio-group>
+      </view>
+
+      <view class="question_two">
+        <span class="question_text">二.您有邀请其他人一起参与记账账号吗? (单选) <text>*</text></span>
+        <van-radio-group value="{{ participation }}" bind:change="participation" style="height: 100%">
+          <van-radio name="1" class="radio">有</van-radio>
+          <van-radio name="2" class="radio">无</van-radio>
+        </van-radio-group>
+      </view>
+
+      <view class="question_three">
+        <span class="question_text">三.您会把记账账单分享给朋友吗? (单选) <text>*</text></span>
+        <van-radio-group value="{{ share }}" bind:change="share" style="height: 100%">
+          <van-radio name="1" class="radio">会</van-radio>
+          <van-radio name="2" class="radio">不会</van-radio>
+        </van-radio-group>
+      </view>
+
+      <view class="question_four">
+        <span class="question_text">四.您觉得记账账单的界面美观吗? (单选) <text>*</text></span>
+        <van-radio-group value="{{ beautiful }}" bind:change="beautiful" style="height: 100%">
+          <van-radio name="1" class="radio">非常美观 <text>(5分)</text></van-radio>
+          <van-radio name="2" class="radio">美观 <text>(4分)</text></van-radio>
+          <van-radio name="3" class="radio">一般 <text>(3分)</text></van-radio>
+          <van-radio name="4" class="radio">不太美观 <text>(2分)</text></van-radio>
+        </van-radio-group>
+      </view>
+
+      <view class="question_five">
+        <span class="question_text">五.您觉得记账账单操作起来方便吗? (单选) <text>*</text></span>
+        <van-radio-group value="{{ operation }}" bind:change="operation" style="height: 100%">
+          <van-radio name="1" class="radio">非常方便 <text>(5分)</text></van-radio>
+          <van-radio name="2" class="radio">还不错 <text>(4分)</text></van-radio>
+          <van-radio name="3" class="radio">一般 <text>(3分)</text></van-radio>
+          <van-radio name="4" class="radio">不太方便 <text>(2分)</text></van-radio>
+        </van-radio-group>
+      </view>
+
+      <view class="question_six">
+        <span class="question_text">六.您觉得产品那些功能比较好用? (多选) <text>*</text></span>
+        <van-checkbox-group value="{{ easy }}" bind:change="easy">
+          <van-checkbox wx:for="{{ easy_list }}" wx:key="{{index}}" name="{{ item }}" shape="square" class="checkbox">
+            <text> {{ item }}</text>
+          </van-checkbox>
+        </van-checkbox-group>
+      </view>
+
+      <view class="question_seven"></view>
+        <span class="question_text" >七.您觉得还有那些需要改进的地方?</span>
+        <textarea auto-height value="{{textarea}}" placeholder="点击可输入内容" placeholder-style="font-size: 12px;"></textarea>
+    </view>
+
+    <view class="question_btn">
+      <van-button type="info" @tap="go_submit">完成答卷</van-button>
+    </view>
+    <van-toast id="van-toast" />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import Toast from '../components/van/toast/toast'
+
+  export default class question extends wepy.page {
+    config = {
+      navigationStyle: 'custom',
+      navigationBarTextStyle: "black",
+      usingComponents: {
+        'van-icon': '../components/van/icon/index',
+        'van-nav-bar': '../components/van/nav-bar/index',
+        "van-radio": "../components/van/radio/index",
+        "van-radio-group": "../components/van/radio-group/index",
+        "van-checkbox": "../components/van/checkbox/index",
+        "van-checkbox-group": "../components/van/checkbox-group/index",
+        "van-button": "../components/van/button/index",
+        "van-toast": "../components/van/toast/index"
+      }
+    }
+    components = {
+
+    }
+
+    data = {
+      enter: 0,
+      participation: 0,
+      share: 0,
+      beautiful: 0,
+      operation: 0,
+      easy: [],
+      easy_list: [],
+      textarea: ''
+    }
+
+    events = {
+
+    }
+
+    computed = {
+
+    }
+
+    methods = {
+      enter(e) {
+        this.enter = e.detail
+      },
+      participation(e) {
+        this.participation = e.detail
+      },
+      share(e) {
+        this.share = e.detail
+      },
+      beautiful(e) {
+        this.beautiful = e.detail
+      },
+      operation(e) {
+        this.operation = e.detail
+      },
+      easy(e) {
+        this.easy = e.detail
+      },
+      go_submit() {
+        let that = this
+        wx.getStorage({
+          key: 'openid',
+          success(res) {
+            // that.openid = res.data
+            if(that.enter && that.share && that.beautiful && that.operation != 0) {
+              wepy.request({
+                url: 'http://localhost:3000/money/submit',
+                data: {
+                  openid: res.data,
+                }
+              }).then(res => {
+                wx.switchTab({
+                  url: '/pages/about/about',   //注意switchTab只能跳转到带有tab的页面，不能跳转到不带tab的页面
+                })
+              })
+            } else {
+              Toast('请填写完整')
+            }
+          }
+        })
+      },
+      onClickLeft() {
+        wx.switchTab({
+          url: '/pages/about/about',   //注意switchTab只能跳转到带有tab的页面，不能跳转到不带tab的页面
+        })
+      }
+    }
+
+    onLoad() {
+      this.easy_list = [
+        '操作比较方便',
+        '界面比较美观',
+        '支持共享功能',
+        '可以查看图标功能',
+        '记账类型比较丰富',
+        '不太好用'
+      ]
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+  page {
+    height: 100%;
+    width: 100%;
+    background-color: "#EFF4F8";
+  }
+  .question {
+    width: 100%;
+    height: 100%;
+    .question_content {
+      width: 100%;
+      height: 100%;
+      box-sizing: content-box;
+      margin-top: 74px;
+      .question_title {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        background: #fff;
+        text {
+          width: 100%;
+          text-indent: 15px;
+          letter-spacing: 1px;
+        }
+        text:first-child {
+          font-size: 18px;
+          padding: 7px 0px;
+          background-image: linear-gradient(180deg, #d9d9d9, #d9d9d9 50%, transparent 50%);
+          background-size: 120% 2px;
+          background-repeat: no-repeat;
+          background-position: bottom left;
+        }
+        text:last-child {
+          font-size: 12px;
+          padding: 5px 0;
+        }
+      }
+      .question_text {
+        width: 100%;
+        text-indent: 15px;
+        display: inline-block;
+        font-size: 15px;
+        letter-spacing: 1px;
+        padding: 4px 0;
+        background-image: linear-gradient(180deg, #d9d9d9, #d9d9d9 50%, transparent 50%);
+        background-size: 120% 2px;
+        background-repeat: no-repeat;
+        background-position: bottom left;
+        background-color: #fff;
+        text {
+          color: red;
+        }
+      }
+      .question_one ,.question_two,.question_three,.question_four,.question_five {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        margin-top: 10px;
+
+        text {
+          font-size: 12px;
+          margin-left: 15px;
+        }
+      }
+      .question_six {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        margin-top: 10px;
+        text {
+          font-size: 12px;
+          margin-left: 15px;
+        }
+      }
+      .question_seven {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        margin-top: 10px;
+      }
+    }
+    .question_btn {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin: 10px 0;
+
+    }
+  }
+</style>
+<style lang="less">
+  .bar_left {
+    width: 100%;
+    height: 100%;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    image {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+  }
+  .question {
+    .van-nav-bar__left,.van-nav-bar__right {
+      position: absolute;
+      top: 0px!important;
+      display: flex;
+    }
+    .van-nav-bar {
+      background: #fff!important;
+    }
+    .van-radio {
+      margin-left: 12px;
+      padding: 10px 0;
+    }
+    .van-checkbox {
+      margin-left: 12px;
+      padding: 10px 0;
+    }
+    .radio {
+      display: block;
+      width: 100%;
+      background-image: linear-gradient(180deg, #d9d9d9, #d9d9d9 50%, transparent 50%);
+      background-size: 120% 2px;
+      background-repeat: no-repeat;
+      background-position: bottom left;
+      text {
+        margin-left: 4px!important;
+      }
+    }
+    .checkbox {
+      display: block;
+      width: 100%;
+      background-image: linear-gradient(180deg, #d9d9d9, #d9d9d9 50%, transparent 50%);
+      background-size: 120% 2px;
+      background-repeat: no-repeat;
+      background-position: bottom left;
+      text {
+        margin-left: 4px!important;
+        font-size: 15px!important;
+      }
+    }
+    textarea {
+      display: block;
+      width: 100%;
+      text-indent: 12px;
+      font-size: 12px;
+      padding: 10px 0;
+      background: #fff;
+    }
+    .van-button--normal {
+      padding: 0 80px!important;
+      font-size:14px !important;
+    }
+    .van-button {
+      display: inline-block;
+      height: 38px;
+      line-height: 38px;
+      border-radius: 4px;
+    }
+  }
+
+</style>
+
